@@ -11,26 +11,6 @@ View this Crypto payment plugin on MARKETPLACE.MAGENTO.COM: https://marketplace.
 * Magento version as specified in composer.json of this project
 * Cointopay account ([Account registration](https://cointopay.com/))
 
-## Installation
-
-### Install the Crypto Magento 2 composer package
-
-```composer require crypto/paymentgateway```
-
-### Enable the extension in Magento 2
-
-```bin/magento module:enable Crypto_PaymentGateway --clear-static-content```
-
-### Setup the extension and refresh cache
-
-```bin/magento setup:upgrade```
-
-```bin/magento cache:flush```
-
-```bin/magento setup:di:compile```
-
-```bin/magento setup:static-content:deploy```
-
 
 ## Configuration
 
