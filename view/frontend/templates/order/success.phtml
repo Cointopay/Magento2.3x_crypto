@@ -1,0 +1,301 @@
+<?php
+/**
+ * Copyright © 2018 Crypto. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+
+$order = $block->getOrder();
+$payment_gateway_code = $order->getPayment()->getMethodInstance()->getCode();
+if ($payment_gateway_code == 'crypto_gateway') {
+?>
+<style type="text/css">
+    .crypto.popup-overlay{
+        visibility:hidden;
+        position: relative;
+        background: #ffffff;
+        width: 90%;
+        z-index: 9;
+    }
+    .popup-overlay.active{
+      visibility:visible;
+      text-align:center;
+    }
+    .crypto.popup-content {
+      visibility:hidden;
+    }
+    .popup-content.active {
+      visibility:visible;
+    }
+    .crypto_details_main {
+      display: flex;
+	  flex-direction: row;
+    }
+    .crypto_details {
+      width: 80%;
+    }
+	.crypto_details_qrcode {
+      width: 18%;
+    }
+    .crypto_details .remaining_amount {
+      width: 100%;
+      float: left;
+      margin-top: 10px;
+      text-align: left;
+    }
+    .crypto_details .address {
+      width: 100%;
+      float: left;
+      margin-top: 10px;
+      text-align: left;
+    }
+    .crypto_details .time {
+      width: 100%;
+      float: left;
+      margin-top: 10px;
+      text-align: left;
+    }
+    .crypto_details .trxid {
+      width: 100%;
+      float: left;
+      margin-top: 10px;
+      text-align: left;
+    }
+    .crypto_details .description {
+      width:100%;
+      text-align: left;
+      margin-top: 6px;
+      display: inline-block;
+    }
+    .crypto.popup-overlay, .crypto.popup-content {
+    	z-index : 99999;
+    	padding : 20px 0;
+    	height : 50%;
+    	top : 10%;
+		margin: auto;
+    }
+	.checkout-success a.action.primary.continue{
+		display:none;
+	}
+	@media (min-width: 992px) {
+		.modal-popup.ctp-popup .modal-inner-wrap {
+			max-width: 900px;
+		}
+	}
+	@media only screen and (max-width: 767px) {
+		.crypto_details_main {
+			display: block;
+	   }
+	   .crypto.popup-overlay {
+			padding: 15px !important;
+		}
+		.crypto_details {
+		  width: 100%;
+		}
+		.crypto_details_qrcode {
+		  width: 100%;
+		}
+		.crypto_details p {
+			text-align:center !important;
+			font-size:11px !important;
+		}
+		.crypto_details .address input {
+			font-size:8.8px !important;
+		}
+		.modal-popup.ctp-popup .modal-content{
+			padding-left: 1rem;
+			padding-right: 1rem;
+		}
+		.modal-popup.modal-slide {
+			width: 90%;
+			right: 0;
+			left: 0;
+			margin: auto;
+		}
+		.modal-popup.ctp-popup .modal-footer {
+			padding-bottom: 0;
+			padding-top: 0;
+			text-align: center;
+		}
+		.modal-popup.ctp-popup .modal-content {
+			padding-bottom: 10px;
+		}
+		.crypto.popup-content {
+			padding: 0;
+		}
+		#ctp-modal-overlay > p {
+			text-align:center !important;
+		}
+	}
+</style>
+<div class="checkout-success">
+<?php if($order->getIncrementId()) {?>
+        
+	    <!-- Crypto popup Content -->
+        <?php if ($payment_gateway_code == 'crypto_gateway') { ?>
+		<h1 style="margin-bottom: 20px;margin-top: 20px;"><a class="ctp_modal_open" href="javascript:void(0);">Show payment page</a></h1>
+			<?php $crypto_content = $block->getCointopayHtml(); ?>
+		<div id="ctp-modal-overlay" style="display:none;">
+		 <p><?php echo __('Thank you for your order, please complete the payment below.') ?></p>
+			    <?php if ($crypto_content) {?>
+		        <div class="popup-overlay crypto active">
+		          	<div class="popup-content crypto active">    
+                        <img src="<?php echo $this->getViewFileUrl('Crypto_PaymentGateway::images/crypto.gif'); ?>" />
+						<p class="description" style="text-align:center !important;"><strong>Please make the payment and wait for the success confirmation page.</strong></p>
+                        <h1> PAYMENT DETAILS </h1>
+						<div class="crypto_details_main">
+							<div class="crypto_details_qrcode">
+								<?php $qrcodeurl = file_get_contents($crypto_content->QRCodeURL);?>
+								<img src="data:image/png;base64,<?= base64_encode($qrcodeurl) ?>" alt="Crypto Transaction details are in progress please wait." class="ctpQRcode" title="QR Scan Crypto" width="" />
+								<?php $qrcodeurlCoin = file_get_contents('https://chart.googleapis.com/chart?chs=300&cht=qr&chl='.$crypto_content->coinAddress);?>
+								<img src="data:image/png;base64,<?= base64_encode($qrcodeurlCoin) ?>" alt="ctpCoinAdress" class="ctpCoinAdress" title="coinAddress" style="display:none;" width="" />
+							</div>
+							<div class="crypto_details">
+								<p class="remaining_amount"><strong>Amount:</strong><br>
+									<?=  $crypto_content->Amount.' ' ?>
+									<?= strtoupper($crypto_content->CoinName).' ' ?>
+									<?php $ctpcoinurl = file_get_contents('https://s3-eu-west-1.amazonaws.com/cointopay/img/'.$crypto_content->CoinName.'_dash2.png');?>
+									<img src="data:image/png;base64,<?= base64_encode($ctpcoinurl) ?>" style="width:20px;" />
+								</p>
+								<?php if (property_exists($crypto_content, 'Tag')) {
+									if (!empty($crypto_content->Tag)) {
+								?>
+								<p class="description"><strong>Memo/Tag: </strong> <?= $crypto_content->Tag ?> </p>
+								<?php }}?>
+								<p class="address"><strong>Address: </strong> <br> <input type="text" value="<?= $crypto_content->coinAddress ?>"> </p>
+								<p class="description"><button class="btn btn-success btnCrypto mb-2">CRYPTO LINK</button></p>
+								<p class="time"><strong>Expiry: </strong> <span id="expire_time"><?= date("m/d/Y h:i:s T",strtotime("+$crypto_content->ExpiryTime minutes")) ?></span></p>
+								<p class="trxid"><strong>Transaction ID: </strong> <?= $crypto_content->TransactionID ?></p>
+								<p class="description">Make sure to send enough to cover  any coin transaction fees!</p>
+								<p class="description">Send an equal amount or more.</p>
+								<input type="hidden" id="crypto_trid" value="<?= $crypto_content->TransactionID ?>" >
+							</div>
+						</div>
+		          	</div>
+		        </div>
+            <script type="text/javascript">
+                require(
+                    ['jquery'],
+                    function($) {
+                        $(function() {
+                            interval = setInterval(function() {
+                                if ($('#crypto_trid').length) {
+                                    selected_coin = $('#crypto_trid').val();
+                                    $.ajax ({
+                                        url: '<?php echo $block->getCoinsPaymentUrl() ?>',
+                                        //showLoader: true,
+                                        data: {paymentaction:selected_coin, type:'status'},
+                                        type: "POST",
+                                        success: function(result) {
+                                            if (result.status == 'paid') {
+                                                $('.popup-content.crypto').html('<h3>Thank you, your payment is received!</h3>');
+                                            } else if (result.status == 'expired') {
+                                                $('.popup-content.crypto').html('<h3>Payment time expired!</h3>');
+                                            }
+											 else if (result.status == 'underpaid') {
+                                                $('.popup-content.crypto').html('<h3>You have underpaid, please pay the remaining amount or contact support!</h3>');
+                                            }
+                                        }
+                                    });
+                                }
+                            }, 10000);
+                            
+                            // count down time left
+                            var d1 = new Date (),
+                            d2 = new Date ( d1 );
+                            d2.setMinutes ( d1.getMinutes() + <?= $crypto_content->ExpiryTime ?> );
+                            var countDownDate = d2.getTime();
+
+                            // Update the count down every 1 second
+                            var x = setInterval(function() {
+                                if ($('#expire_time').length) {
+                                    // Get todays date and time
+                                    var now = new Date().getTime();
+                                    
+                                    // Find the distance between now an the count down date
+                                    var distance = countDownDate - now;
+                                    
+                                    // Time calculations for days, hours, minutes and seconds
+                                    var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                                    var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                    var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                    var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                                    
+                                    // Output the result in an element with id="expire_time"
+                                    document.getElementById("expire_time").innerHTML = days + "d " + hours + "h "
+                                    + minutes + "m " + seconds + "s ";
+                                    
+                                    // If the count down is over, write some text 
+                                    if (distance < 0) {
+                                        clearInterval(x);
+                                        document.getElementById("expire_time").innerHTML = "EXPIRED";
+                                    }
+                                }
+                            }, 1000);
+                        });
+                    });
+            </script>
+			<?php } else { echo "No Cointopay data found due to empty session values"; } //} else { echo "No Cointopay Data Found"; } ?>
+			</div>
+			<script>
+			   require(
+				   [
+					   'jquery',
+					   'Magento_Ui/js/modal/modal'
+				   ],
+				   function (
+					   $,
+					   modal
+				   ) {
+					   var modaloption = {
+						   type: 'popup',
+						   modalClass: 'ctp-popup',
+						   responsive: true,
+						   innerScroll: true,
+							title: false,
+							buttons: [{
+								text: $.mage.__('close'),
+								class: '',
+								click: function () {
+									this.closeModal();
+								}
+							}],
+							clickableOverlay: false
+					   };
+					   var callforoption = modal(modaloption, $('#ctp-modal-overlay'));
+					   $('#ctp-modal-overlay').modal('openModal');
+				   }
+			   );
+			</script>
+			<script type="text/javascript">
+				require(
+					['jquery'],
+					function($) {
+						$(function() {
+							$('.ctp_modal_open').click(function(){
+								//$('#ctp-modal-overlay').css("display", "block");
+								// var modalContainer = 
+								 $("#ctp-modal-overlay").modal('openModal');
+								//modalContainer.modal('openModal');
+							});
+							if ($('.btnCrypto').length) {
+								$('.btnCrypto').click(function(){
+									if ($(this).text() == 'CRYPTO LINK') {
+										$(this).text('CRYPTO ADDRESS');
+										$('.ctpQRcode').hide();
+										$('.ctpCoinAdress').show();
+									} else if ($(this).text() == 'CRYPTO ADDRESS') {
+										$(this).text('CRYPTO LINK');
+										$('.ctpCoinAdress').hide();
+										$('.ctpQRcode').show();
+									}
+									
+								});
+							}
+						});
+					});
+			</script>
+	    <?php } ?>
+<?php } ?>
+<a class="action primary ctp" style="float: right;" href="<?= $this->getBaseUrl() ?>">Continue Shopping</a>
+</div>
+<?php }?>

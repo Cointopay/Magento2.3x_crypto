@@ -1,0 +1,213 @@
+<?php
+/**
+ * Copyright © 2018 Crypto. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+?>
+<div class="block-content">
+<div class="table-wrapper orders-recent">
+<?php if($block->getOrder()) {?>
+<table class="data table table-order-items recent" id="ctp-orders-table">
+<caption class="table-caption">Recent Orders</caption>
+<thead>
+<tr>
+<th scope="col" class="col id">Order #</th>
+<th scope="col" class="col date">Date</th>
+<th scope="col" class="col total">Order Total</th>
+<th scope="col" class="col status">Status</th>
+<th scope="col" class="col actions">Action</th>
+</tr>
+</thead>
+<tbody>
+<?php foreach($block->getOrder()->load() as $customerOrder) {?>
+<tr>
+<td data-th="Order #" class="col id"><?=$customerOrder['increment_id']?></td>
+<td data-th="Date" class="col date"><?=$customerOrder['created_at']?></td>
+<td data-th="Order Total" class="col total"><span class="price"><?=round($customerOrder['grand_total'],2)?></span></td>
+<td data-th="Status" class="col status"><?=$customerOrder['status']?></td>
+<td data-th="Actions" class="col actions">
+<a href="javascript:void(0)" data-ctp="<?=$customerOrder['ext_order_id']?>" class="action view ctp_popup_btn">
+<span>View Order</span>
+</a>
+</td>
+</tr>
+<?php }?>
+</tbody>
+</table>
+</div>
+<?php
+}
+if ($block->getPagerHtml()): ?>
+    <div class="order-products-toolbar toolbar bottom"><?= $block->getPagerHtml() ?></div>
+<?php else: ?>
+    <div class="message info empty"><span><?= /* @escapeNotVerified */ __('You have no crypto invoices.') ?></span></div>
+<?php endif; ?>
+<style type="text/css">
+    .crypto.popup-overlay{
+        visibility:hidden;
+        position: relative;
+        background: #ffffff;
+        width: 90%;
+        z-index: 9;
+    }
+    .popup-overlay.active{
+      visibility:visible;
+      text-align:center;
+    }
+    .crypto.popup-content {
+      visibility:hidden;
+    }
+    .popup-content.active {
+      visibility:visible;
+    }
+	.crypto_details_main {
+      display: flex;
+	  flex-direction: row;
+    }
+    .crypto_details {
+      width: 80%;
+    }
+	.crypto_details_qrcode {
+      width: 18%;
+    }
+    .crypto_details .remaining_amount {
+      width: 100%;
+      float: left;
+      margin-top: 10px;
+      text-align: left;
+    }
+    .crypto_details .address {
+      width: 100%;
+      float: left;
+      margin-top: 10px;
+      text-align: left;
+    }
+    .crypto_details .time {
+      width: 100%;
+      float: left;
+      margin-top: 10px;
+      text-align: left;
+    }
+    .crypto_details .trxid {
+      width: 100%;
+      float: left;
+      margin-top: 10px;
+      text-align: left;
+    }
+    .crypto_details .description {
+      width:100%;
+      text-align: left;
+      margin-top: 6px;
+      display: inline-block;
+    }
+    .crypto.popup-overlay, .crypto.popup-content {
+    	z-index : 99999;
+    	padding : 20px 0;
+    	height : 50%;
+    	top : 10%;
+		margin: auto;
+    }
+	
+	@media (min-width: 992px) {
+		.modal-popup.ctp-popup .modal-inner-wrap {
+			max-width: 900px;
+		}
+	}
+	@media only screen and (max-width: 767px) {
+		.crypto_details_main {
+			display: block;
+	   }
+	   .crypto.popup-overlay {
+			padding: 15px !important;
+		}
+		.crypto_details {
+		  width: 100%;
+		}
+		.crypto_details_qrcode {
+		  width: 100%;
+		}
+		.crypto_details p {
+			text-align:center !important;
+			font-size:11px !important;
+		}
+		.crypto_details .address input {
+			font-size:8.8px !important;
+		}
+		.modal-popup.ctp-popup .modal-content{
+			padding-left: 1rem;
+			padding-right: 1rem;
+		}
+		.modal-popup.modal-slide {
+			width: 90%;
+			right: 0;
+			left: 0;
+			margin: auto;
+		}
+		.modal-popup.ctp-popup .modal-footer {
+			padding-bottom: 0;
+			padding-top: 0;
+			text-align: center;
+		}
+		.modal-popup.ctp-popup .modal-content {
+			padding-bottom: 10px;
+		}
+		.crypto.popup-content {
+			padding: 0;
+		}
+		#ctp-modal-overlay > p {
+			text-align:center !important;
+		}
+	}
+</style>
+<div id="ctp-modal-overlay" style="display:none;"></div>
+<script type="text/javascript">
+                require(
+                    [
+					'jquery',
+					   'Magento_Ui/js/modal/modal'
+					],
+                    function($,modal) {
+						 $(function() {
+                        $(document).on('click', '.ctp_popup_btn', function() {
+							    var ctpstr = '';
+								var modaloption = {
+						   type: 'popup',
+						   modalClass: 'ctp-popup',
+						   responsive: true,
+						   innerScroll: true,
+							title: false,
+							buttons: [{
+								text: $.mage.__('close'),
+								class: '',
+								click: function () {
+									this.closeModal();
+								}
+							}],
+							clickableOverlay: false
+					   };
+					   var callforoption = modal(modaloption, $('#ctp-modal-overlay'));
+                                if ($('#ctp-modal-overlay').length) {
+                                    selected_transaction_id = $(this).attr('data-ctp');
+                                    $.ajax ({
+                                        url: '<?php echo $block->getCoinsPaymentUrl() ?>ctpinfo/crypto',
+                                        showLoader: true,
+                                        data: {selected_transaction_id:selected_transaction_id},
+                                        type: "POST",
+                                        success: function(result) {
+											if (typeof result !== 'undefined') {
+											if (typeof result !== 'object') {
+												result = $.parseJSON(result);
+											}
+											
+											
+											 $('#ctp-modal-overlay').html(result.ctpData);
+											 $("#ctp-modal-overlay").modal('openModal');
+                                        }
+										}
+                                    });
+                                }
+                        });
+                    });
+				});
+            </script>
+</div>

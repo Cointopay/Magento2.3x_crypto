@@ -1,0 +1,85 @@
+<script type="text/javascript">
+    require(
+        ['jquery'],
+        function($) {
+            $(function() {
+                $(document).on('change', '.crypto_coin_val', function (event) {
+                    event.preventDefault();
+                    selected_coin = $('.crypto_coin_val').val();
+                    $.ajax ({
+                        url: '<?php echo $this->getCoinsPaymentUrl() ?>',
+                        showLoader: true,
+                        data: {paymentaction:selected_coin, type:'order'},
+                        type: "POST",
+                        success: function(result) {
+                            // api response
+                            if (result.status == 'error') {
+                                $('.checkout.crypto-order').closest('.payment-method').find('.crypto-error').remove();
+                                $('.checkout.crypto-order').closest('.payment-method').find('.messages').append('<div role="alert" class="message message-error error crypto-error"><div data-ui-id="checkout-cart-validationmessages-message-error crypto-error" data-bind="text: $data"> Checkout Error:'+result.message+'</div></div>');
+                                $('.checkout.crypto-order').hide();
+                            } else {
+                                $('.checkout.crypto-order').closest('.payment-method').find('.crypto-error').remove();
+                                $('.checkout.crypto-order').show();
+                            }
+                        }
+                    });
+                });
+                
+                interval = setInterval(function() {
+                    if ($('.crypto_coin_val').length) {
+                        selected_coin = $('.crypto_coin_val').val();
+                        $.ajax ({
+                            url: '<?php echo $this->getCoinsPaymentUrl() ?>',
+                           showLoader: true,
+                            data: {paymentaction:selected_coin, type:'order'},
+                            type: "POST",
+                            success: function(result) {
+                                // api response
+                                if (result.status == 'error') {
+                                    $('.checkout.crypto-order').closest('.payment-method').find('.crypto-error').remove();
+                                    $('.checkout.crypto-order').closest('.payment-method').find('.messages').append('<div role="alert" class="message message-error error crypto-error"><div data-ui-id="checkout-cart-validationmessages-message-error crypto-error" data-bind="text: $data"> Checkout Error: '+result.message+'</div></div>');
+                                    $('.checkout.crypto-order').hide();
+                                } else {
+                                    $('.checkout.crypto-order').closest('.payment-method').find('.crypto-error').remove();
+                                    $('.checkout.crypto-order').show();
+                                }
+                            }
+                        });
+                        clearInterval(interval);
+                    }
+                }, 1000);
+
+                // confirm order payment status
+                $(document).on('click', '#confirm_payments', function (event) {
+                    event.preventDefault();
+                    transaction_id = $('#crypto_trid').val();
+                    $.ajax ({
+                        url: '<?php echo $this->getCoinsPaymentUrl() ?>',
+                        showLoader: true,
+                        data: {paymentaction:transaction_id, type:'status'},
+                        type: "POST",
+                        success: function(result) {
+                            var crypto_response = JSON.parse(result);
+                            if (crypto_response[1] == 'paid') {
+                                $('#cointo_complete_order').show();
+                                $('#cointo_complete_order')[0].click();
+                                $(".crypto.popup-overlay, crypto.popup-content").removeClass("active");
+                                $(".crypto-order").hide();
+                            } else if (crypto_response[1] == 'waiting') {
+                                alert('Please double check you have successfully transfered payments.');
+                            } else if (crypto_response[1] == 'expired') {
+                                alert('Sorry payment time expired now.');
+                                window.location.href = window.location.protocol + "//" + window.location.host + "/";
+                                return;
+                            }
+                        }
+                    });
+                });
+                setInterval(function() {
+                    if ($('#confirm_payments').length) {
+                        $('#confirm_payments')[0].click();
+                    }
+                }, 300000);
+            });
+        });
+</script>
